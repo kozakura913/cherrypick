@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { reversiUpdateKeys } from 'cherrypick-js';
-import type { MiReversiGame } from '@/models/_.js';
+import type { MiReversiGame, MiUser } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { ReversiService } from '@/core/ReversiService.js';
@@ -62,7 +62,9 @@ class ReversiGameChannel extends Channel {
 				this.putStone(body.pos, body.id);
 				break;
 			case 'claimTimeIsUp': this.claimTimeIsUp(); break;
-			case 'reaction': this.sendReaction(body); break;
+			case 'reaction':
+				if (typeof body !== 'string') return;
+				this.sendReaction(body); break;
 		}
 	}
 

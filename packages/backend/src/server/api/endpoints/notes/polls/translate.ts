@@ -28,7 +28,14 @@ export const meta = {
 		optional: true, nullable: false,
 		properties: {
 			sourceLang: { type: 'string' },
-			text: { type: 'string' },
+			text: {
+				type: 'array',
+				optional: true, nullable: false,
+				items: {
+					type: 'string',
+					optional: false, nullable: true,
+				},
+			},
 		},
 	},
 
@@ -130,7 +137,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			return Promise.resolve({
 				sourceLang: translationResult.sourceLang || '',
-				text: translationResult.text || '',
+				text: translationResult.text || [],
 				translator: translationResult.translator || [],
 			});
 		});
