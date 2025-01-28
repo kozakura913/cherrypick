@@ -18,6 +18,7 @@ import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
 import type { EmojisRepository, MiRole, MiUser } from '@/models/_.js';
 import type { MiEmoji } from '@/models/Emoji.js';
 import type { Serialized } from '@/types.js';
+import { DriveService } from '@/core/DriveService.js';
 
 const parseEmojiStrRegexp = /^([-\w]+)(?:@([\w.-]+))?$/;
 
@@ -72,6 +73,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		private emojiEntityService: EmojiEntityService,
 		private moderationLogService: ModerationLogService,
 		private globalEventService: GlobalEventService,
+		private driveService: DriveService,
 	) {
 		this.emojisCache = new MemoryKVCache<MiEmoji | null>(1000 * 60 * 60 * 12); // 12h
 
@@ -103,6 +105,16 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		localOnly: boolean;
 		roleIdsThatCanBeUsedThisEmojiAsReaction: MiRole['id'][];
 	}, moderator?: MiUser): Promise<MiEmoji> {
+		// システムユーザーとして再アップロード
+		const copyDriveFile = await this.driveService.uploadFromUrl({
+			url: data.originalUrl,
+			user: null,
+			force: true,
+		});
+		data.originalUrl = copyDriveFile.url;
+		data.publicUrl = copyDriveFile.webpublicUrl ?? copyDriveFile.url;
+		data.fileType = copyDriveFile.webpublicType ?? copyDriveFile.type;
+
 		const emoji = await this.emojisRepository.insertOne({
 			id: this.idService.gen(),
 			updatedAt: new Date(),
