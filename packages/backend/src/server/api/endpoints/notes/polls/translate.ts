@@ -175,15 +175,16 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		};
 	}
 
-	private async apiCloudTranslationAdvanced(text: string, targetLang: string, saKey: string, projectId: string, location: string, model: string | null, glossary: string | null, provider: string) {
+	private async apiCloudTranslationAdvanced(text: string[], targetLang: string, saKey: string, projectId: string, location: string, model: string | null, glossary: string | null, provider: string) {
 		const [path, cleanup] = await createTemp();
 		fs.writeFileSync(path, saKey);
 
 		const translationClient = new TranslationServiceClient({ keyFilename: path });
 
+		const detectText = text.join('\n');
 		const detectRequest = {
 			parent: `projects/${projectId}/locations/${location}`,
-			content: text,
+			content: detectText,
 		};
 
 		let detectedLanguage = null;
@@ -203,7 +204,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		const translateRequest = {
 			parent: `projects/${projectId}/locations/${location}`,
-			contents: [text],
+			contents: text,
 			mimeType: 'text/plain',
 			sourceLanguageCode: null,
 			targetLanguageCode: detectedLanguage !== null ? detectedLanguage : targetLang,
@@ -211,7 +212,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			glossaryConfig: glossaryConfig,
 		};
 		const [translateResponse] = await translationClient.translateText(translateRequest);
-		const translatedText = translateResponse.translations && translateResponse.translations[0]?.translatedText;
+		const translatedText = translateResponse.translations && translateResponse.translations.map(t => t.translatedText ?? '');
 		const detectedLanguageCode = translateResponse.translations && translateResponse.translations[0]?.detectedLanguageCode;
 
 		cleanup();
